@@ -62,7 +62,13 @@ bot.addListener("message", function(from, to, text, message) {
 		else if(GetParameter(text, 0) == "!reference")
 			PerformReference(to, text);
 		else if(GetParameter(text, 0) == "!deletereference")
-			PerformDeleteReference(to, text);
+			PerformDeleteReference(to, text);			
+		else if(GetParameter(text, 0) == "!addlol")
+			PerformAddLOL(from, to, text);
+		else if(GetParameter(text, 0) == "!lol")
+			PerformLOL(to, text);
+		else if(GetParameter(text, 0) == "!deletelol")
+			PerformDeleteLOL(to, text);
 	}
 	catch(error)
 	{
@@ -272,11 +278,26 @@ function PerformReference(channel, text) {
 				bot.say(channel, "DB Error."); 
 			else if(rows.length > 0)
 				if(rows[0].length > 0)
-					bot.say(channel, "(" + rows[0][0].Id + ") " + rows[0][0].Link + " [" + rows[0][0].Tags + "] - added by " + rows[0][0].AddedBy + "."); 
+					bot.say(channel, "(" + rows[0][0].Id + ") " + rows[0][0].Link + " [" + rows[0][0].Tags + "]."); 
 				else
 					bot.say(channel, "Nothing found.");
 			else
 				bot.say(channel, "Nothing found."); 
+		});
+}
+
+function PerformLOL(channel, text) {
+	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
+	db.query("CALL drawbot.getLOL('" + tag + "');", function(err, rows, fields) { 
+			if (err) 
+				bot.say(channel, "DB Error."); 
+			else if(rows.length > 0)
+				if(rows[0].length > 0)
+					bot.say(channel, "(" + rows[0][0].id + ") " + rows[0][0].funny); 
+				else
+					bot.say(channel, "Nothing found. lol :(");
+			else
+				bot.say(channel, "Nothing found. lol :("); 
 		});
 }
 
@@ -299,6 +320,22 @@ function PerformAddReference(from, channel, text) {
 	}
 }
 
+function PerformAddLOL(from, channel, text) {
+	var funny = GetAllParameters(text, 1);
+	var addedBy = from;
+
+	if(funny == "")
+		bot.say(channel, "that's not funny. ex: !addlol <Dodongo> I'm so tall!");
+	else {
+		db.query("CALL drawbot.insertLOL('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "lol!!"); // TO DO - include the id
+			});
+	}
+}
+
 function PerformDeleteReference(channel, text) {
 	var id = GetParameter(text, 1);
 	if(id == "")
@@ -312,16 +349,17 @@ function PerformDeleteReference(channel, text) {
 			});
 }
 
-function PerformQuote(channel, text) {
-	// example:
-	// !quote - random quote
-	// !quote rat - random quote with rat in it somewhere
-	// !quote keyword 4 - 4th quote with rat in it
-}
-
-function PerformAddQuote(channel, text) {
-	// example:
-	// !addquote <davidwinters> derp
+function PerformDeleteLOL(channel, text) {
+	var id = GetParameter(text, 1);
+	if(id == "")
+		bot.say("Must provide id. ex: !deletelol 1");
+	else 
+		db.query("CALL drawbot.deleteLOL('" + id + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "Deleted, lol."); // TO DO - show what was deleted first
+			});
 }
 
 function PerformSuggestTheme(channel, text) {
