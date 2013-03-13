@@ -21,6 +21,18 @@ var db = mysql.createConnection({
   password : '',
 });
 
+var log4js = require('log4js'); 
+log4js.configure({
+  appenders: [{ 
+	type: 'file', 
+	absolute: true,
+	filename: 'skd.log', 
+	maxLogSize: 524288000,
+	category: 'plain-logs' 
+  }]
+});
+var logger = log4js.getLogger('plain-logs');
+
 // random commands
 bot.addListener("message", function(from, to, text, message) {
 	try
@@ -58,10 +70,49 @@ bot.addListener("message", function(from, to, text, message) {
 	}
 });
 
+bot.addListener("topic", function(channel, topic, nick, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* " + nick + " changes topic to '" + topic + "'");
+});
+
+bot.addListener("join", function(channel, nick, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* Joins: " + nick + " (" + message.prefix + ")");
+});
+
+bot.addListener("part", function(channel, nick, reason, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* Parts: " + nick + " (" + message.prefix + ")");
+});
+
+bot.addListener("quit", function(nick, reason, channels, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* Quits: " + nick + " (" + message.prefix + ") (Quit: " + reason + ")");
+});
+
+bot.addListener("kick", function(channel, nick, by, reason, channels, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* " + nick + " was kicked by " + by + " (" + reason + ")");
+});
+
+bot.addListener("nick", function(oldnick, newnick, channels, message) {
+	var timestamp = GetTimestamp();
+	logger.info("* " + oldnick + " is now known as " + newnick);
+});
+
 bot.addListener("message#", function(from, channel, text, message) {
+	var timestamp = GetTimestamp();
+	logger.info("<" + from + "> " + text);
 	if(GetParameter(text, 0) == "!part")
 		PerformPart(channel, text, message);
 });
+
+function GetTimestamp() {
+	var now = new Date();
+	var timestamp = now.toISOString();
+	
+	return timestamp;
+}
 
 String.prototype.startsWith = function(needle)
 {
@@ -215,20 +266,18 @@ function PerformPandaHard(channel) {
 }
 
 function PerformReference(channel, text) {
-	var tag = GetParameter(text, 1);
+	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
 	db.query("CALL drawbot.getReference('" + tag + "');", function(err, rows, fields) { 
 			if (err) 
 				bot.say(channel, "DB Error."); 
 			else if(rows.length > 0)
 				if(rows[0].length > 0)
 					bot.say(channel, "(" + rows[0][0].Id + ") " + rows[0][0].Link + " [" + rows[0][0].Tags + "] - added by " + rows[0][0].AddedBy + "."); 
+				else
+					bot.say(channel, "Nothing found.");
+			else
+				bot.say(channel, "Nothing found."); 
 		});
-	
-	// example:
-	// !reference - gets random reference image
-	// !reference 4 - gets reference image with id 4
-	// !reference rat - gets a reference image tagged with rat	
-	//    output: (3) http://www.imgur.com/whatever.jpg [rat, hairy]
 }
 
 function PerformAddReference(from, channel, text) {
@@ -241,22 +290,16 @@ function PerformAddReference(from, channel, text) {
 	else if(tags == "")
 		bot.say(channel, "tag required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
 	else {
-		//db.connect();
 		db.query("CALL drawbot.insertReference('" + imageLink + "', '" + tags + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "Reference added."); // TO DO - include the id
 			});
-		//db.end();
 	}
 }
 
 function PerformDeleteReference(channel, text) {
-	// example:
-	// !deletereference 3
-	//    output: Deleted (3) http://www.imgur.com/whatever.jpg [rat, hairy]
-	
 	var id = GetParameter(text, 1);
 	if(id == "")
 		bot.say("Must provide id. ex: !deletereference 1");
@@ -265,7 +308,7 @@ function PerformDeleteReference(channel, text) {
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
-					bot.say(channel, "Deleted reference."); // TO DO - show what was deleted first
+					bot.say(channel, "Deleted reference."); // TO DO - show what was deleted first: Deleted (3) http://www.imgur.com/whatever.jpg [rat, hairy]
 			});
 }
 
