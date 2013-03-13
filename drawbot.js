@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "Drawbot",
+	botName: "Drawbot2",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -10,9 +10,15 @@ var config = {
 };
 
 var irc = require("irc");
-
 var bot = new irc.Client(config.server, config.botName, {
   channels: config.channels
+});
+
+var mysql = require('mysql');
+var db = mysql.createConnection({
+  host     : 'mysql.newfrost.com',
+  user     : 'drawbot',
+  password : 'rspj2005',
 });
 
 // random commands
@@ -39,6 +45,12 @@ bot.addListener("message", function(from, to, text, message) {
 			PerformPartyHard(to, text);
 		else if(GetParameter(text, 0) == "!pandahard")
 			PerformPandaHard(to, text);
+		else if(GetParameter(text, 0) == "!addreference")
+			PerformAddReference(from, to, text);
+		else if(GetParameter(text, 0) == "!reference")
+			PerformReference(to, text);
+		else if(GetParameter(text, 0) == "!deletereference")
+			PerformDeleteReference(to, text);
 	}
 	catch(error)
 	{
@@ -115,6 +127,7 @@ function PerformPart(channel, text, message) {
 function PerformQuit(message) {
 	if(CommandFromAdmin(message)) {
 		bot.disconnect();
+		db.destroy();
 		node.exit();
 	}
 }
@@ -202,6 +215,15 @@ function PerformPandaHard(channel) {
 }
 
 function PerformReference(channel, text) {
+	var tag = GetParameter(text, 1);
+	db.query("CALL drawbot.getReference('" + tag + "');", function(err, rows, fields) { 
+			if (err) 
+				bot.say(channel, "DB Error."); 
+			else if(rows.length > 0)
+				if(rows[0].length > 0)
+					bot.say(channel, "(" + rows[0][0].Id + ") " + rows[0][0].Link + " [" + rows[0][0].Tags + "] - added by " + rows[0][0].AddedBy + "."); 
+		});
+	
 	// example:
 	// !reference - gets random reference image
 	// !reference 4 - gets reference image with id 4
@@ -209,16 +231,42 @@ function PerformReference(channel, text) {
 	//    output: (3) http://www.imgur.com/whatever.jpg [rat, hairy]
 }
 
-function PerformAddReference(channel, text) {
-	// example:
-	// !addreference http://wwww.imgur.com/whatever.jpg rat, hairy, terrifying - adds reference image to db
-	//    output: Reference image XXXX added with tags XXXX(ID: XXXX).
+function PerformAddReference(from, channel, text) {
+	var imageLink = GetParameter(text, 1);
+	var addedBy = from;
+	var tags = GetAllParameters(text, 2);
+
+	if(imageLink == "")
+		bot.say(channel, "image link required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
+	else if(tags == "")
+		bot.say(channel, "tag required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
+	else {
+		//db.connect();
+		db.query("CALL drawbot.insertReference('" + imageLink + "', '" + tags + "', '" + addedBy + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "Reference added."); // TO DO - include the id
+			});
+		//db.end();
+	}
 }
 
 function PerformDeleteReference(channel, text) {
 	// example:
 	// !deletereference 3
 	//    output: Deleted (3) http://www.imgur.com/whatever.jpg [rat, hairy]
+	
+	var id = GetParameter(text, 1);
+	if(id == "")
+		bot.say("Must provide id. ex: !deletereference 1");
+	else 
+		db.query("CALL drawbot.deleteReference('" + id + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "Deleted reference."); // TO DO - show what was deleted first
+			});
 }
 
 function PerformQuote(channel, text) {
