@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "Drawbot2",
+	botName: "Drawbot",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -18,7 +18,7 @@ var mysql = require('mysql');
 var db = mysql.createConnection({
   host     : 'mysql.newfrost.com',
   user     : 'drawbot',
-  password : 'rspj2005',
+  password : '',
 });
 
 // random commands
