@@ -37,38 +37,43 @@ var logger = log4js.getLogger('plain-logs');
 bot.addListener("message", function(from, to, text, message) {
 	try
 	{
-		if(GetParameter(text, 0) == "!say")
-			PerformSay(text);
-		else if(GetParameter(text, 0) == "!join")
-			PerformJoin(text, message);
-		else if(GetParameter(text, 0) == "!quit")
-			PerformQuit(message);
-		else if(GetParameter(text, 0) == "!timer")
-			PerformTimer(to, text);
-		else if(GetParameter(text, 0) == "!theme")
-			PerformTheme(to, text);
-		else if(GetParameter(text, 0) == "!participants")
-			PerformParticipants(to, text);
-		else if(GetParameter(text, 0) == "!start")
-			PerformStart(to, text);
-		else if(GetParameter(text, 0) == "!stop")
-			PerformStop(to, text);
-		else if(GetParameter(text, 0) == "!partyhard")
-			PerformPartyHard(to, text);
-		else if(GetParameter(text, 0) == "!pandahard")
-			PerformPandaHard(to, text);
-		else if(GetParameter(text, 0) == "!addreference")
-			PerformAddReference(from, to, text);
-		else if(GetParameter(text, 0) == "!reference")
-			PerformReference(to, text);
-		else if(GetParameter(text, 0) == "!deletereference")
-			PerformDeleteReference(to, text);			
-		else if(GetParameter(text, 0) == "!addlol")
-			PerformAddLOL(from, to, text);
-		else if(GetParameter(text, 0) == "!lol")
-			PerformLOL(to, text);
-		else if(GetParameter(text, 0) == "!deletelol")
-			PerformDeleteLOL(to, text);
+		if(CommandFromBannedUser(message) == false)
+		{
+			if(GetParameter(text, 0) == "!say")
+				PerformSay(text);
+			else if(GetParameter(text, 0) == "!join")
+				PerformJoin(text, message);
+			else if(GetParameter(text, 0) == "!quit")
+				PerformQuit(message);
+			else if(GetParameter(text, 0) == "!timer")
+				PerformTimer(to, text);
+			else if(GetParameter(text, 0) == "!theme")
+				PerformTheme(to, text);
+			else if(GetParameter(text, 0) == "!participants")
+				PerformParticipants(to, text);
+			else if(GetParameter(text, 0) == "!start")
+				PerformStart(to, text);
+			else if(GetParameter(text, 0) == "!stop")
+				PerformStop(to, text);
+			else if(GetParameter(text, 0) == "!partyhard")
+				PerformPartyHard(to, text);
+			else if(GetParameter(text, 0) == "!pandahard")
+				PerformPandaHard(to, text);
+			else if(GetParameter(text, 0) == "!addreference")
+				PerformAddReference(from, to, text);
+			else if(GetParameter(text, 0) == "!reference")
+				PerformReference(to, text);
+			else if(GetParameter(text, 0) == "!deletereference")
+				PerformDeleteReference(to, text);			
+			else if(GetParameter(text, 0) == "!addlol")
+				PerformAddLOL(from, to, text);
+			else if(GetParameter(text, 0) == "!lol")
+				PerformLOL(to, text);
+			else if(GetParameter(text, 0) == "!deletelol")
+				PerformDeleteLOL(to, text);
+			else if(GetParameter(text, 0) == "!stats")
+				PerformStats(to, text);
+		}
 	}
 	catch(error)
 	{
@@ -158,6 +163,13 @@ function PerformSay(text) {
 
 function CommandFromAdmin(message) {
 	if(message.host.indexOf("cg.shawcable.net") > -1)
+		return true;
+	else
+		return false;
+}
+
+function CommandFromBannedUser(message) {
+	if(message.prefix.toLowerCase().indexOf("panda") != -1)
 		return true;
 	else
 		return false;
@@ -260,6 +272,10 @@ function PerformStop(channel, text) {
 		bot.say(channel, "The party has been pooped on. " + Participants);
 		TimerId = "";
 	}
+}
+
+function PerformStats(channel, text) {
+	bot.say(channel, "http://stats.sketchdaily.net/IRC/sketchdaily.html");
 }
 
 function PerformPartyHard(channel) {
