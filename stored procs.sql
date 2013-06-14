@@ -52,3 +52,31 @@ END//
 CALL insertLOL('test', 'artomizer');
 CALL getLOL('test');
 CALL deleteLOL(1);
+
+//-----
+
+CREATE PROCEDURE insertFace (funny TEXT, addedBy VARCHAR(200))  
+BEGIN  
+	INSERT INTO face(funny, AddedBy)
+	VALUES(funny, addedBy);
+END//
+
+CREATE PROCEDURE getFace (tag VARCHAR(200))  
+BEGIN  
+	SELECT * 
+	FROM face
+	WHERE funny LIKE CONCAT('%', tag, '%')
+	ORDER BY RAND( ) 
+	LIMIT 1;
+END//
+
+CREATE PROCEDURE deleteFACE (idToDelete INT)  
+BEGIN  
+	DELETE FROM face WHERE Id = idToDelete;
+END//
+
+
+CALL insertFace('test', 'artomizer');
+CALL getFace('test');
+CALL deleteFace(1);
+

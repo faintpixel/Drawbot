@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "Drawbot",
+	botName: "cindy14",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -16,9 +16,9 @@ var bot = new irc.Client(config.server, config.botName, {
 
 var mysql = require('mysql');
 var db = mysql.createConnection({
-  host     : 'mysql.newfrost.com',
-  user     : 'drawbot',
-  password : '',
+  host     : 'lol',
+  user     : 'lol',
+  password : 'lol',
 });
 
 var log4js = require('log4js'); 
@@ -37,38 +37,49 @@ var logger = log4js.getLogger('plain-logs');
 bot.addListener("message", function(from, to, text, message) {
 	try
 	{
-		if(GetParameter(text, 0) == "!say")
-			PerformSay(text);
-		else if(GetParameter(text, 0) == "!join")
-			PerformJoin(text, message);
-		else if(GetParameter(text, 0) == "!quit")
-			PerformQuit(message);
-		else if(GetParameter(text, 0) == "!timer")
-			PerformTimer(to, text);
-		else if(GetParameter(text, 0) == "!theme")
-			PerformTheme(to, text);
-		else if(GetParameter(text, 0) == "!participants")
-			PerformParticipants(to, text);
-		else if(GetParameter(text, 0) == "!start")
-			PerformStart(to, text);
-		else if(GetParameter(text, 0) == "!stop")
-			PerformStop(to, text);
-		else if(GetParameter(text, 0) == "!partyhard")
-			PerformPartyHard(to, text);
-		else if(GetParameter(text, 0) == "!pandahard")
-			PerformPandaHard(to, text);
-		else if(GetParameter(text, 0) == "!addreference")
-			PerformAddReference(from, to, text);
-		else if(GetParameter(text, 0) == "!reference")
-			PerformReference(to, text);
-		else if(GetParameter(text, 0) == "!deletereference")
-			PerformDeleteReference(to, text);			
-		else if(GetParameter(text, 0) == "!addlol")
-			PerformAddLOL(from, to, text);
-		else if(GetParameter(text, 0) == "!lol")
-			PerformLOL(to, text);
-		else if(GetParameter(text, 0) == "!deletelol")
-			PerformDeleteLOL(to, text);
+		if(CommandFromBannedUser(message) == false)
+		{
+			if(GetParameter(text, 0) == "!say")
+				PerformSay(text);
+			else if(GetParameter(text, 0) == "!join")
+				PerformJoin(text, message);
+			else if(GetParameter(text, 0) == "!quit")
+				PerformQuit(message);
+			else if(GetParameter(text, 0) == "!timer")
+				PerformTimer(to, text);
+			else if(GetParameter(text, 0) == "!theme")
+				PerformTheme(to, text);
+			else if(GetParameter(text, 0) == "!participants")
+				PerformParticipants(to, text);
+			else if(GetParameter(text, 0) == "!start")
+				PerformStart(to, text);
+			else if(GetParameter(text, 0) == "!stop")
+				PerformStop(to, text);
+			else if(GetParameter(text, 0) == "!partyhard")
+				PerformPartyHard(to, text);
+			else if(GetParameter(text, 0) == "!pandahard")
+				PerformPandaHard(to, text);
+			else if(GetParameter(text, 0) == "!addreference")
+				PerformAddReference(from, to, text);
+			else if(GetParameter(text, 0) == "!reference")
+				PerformReference(to, text);
+			else if(GetParameter(text, 0) == "!deletereference")
+				PerformDeleteReference(to, text);			
+			else if(GetParameter(text, 0) == "!addlol")
+				PerformAddLOL(from, to, text);
+			else if(GetParameter(text, 0) == "!lol")
+				PerformLOL(to, text);
+			else if(GetParameter(text, 0) == "!addface")
+				PerformAddFace(from, to, text);
+			else if(GetParameter(text, 0) == "!face")
+				PerformFace(to, text);
+			else if(GetParameter(text, 0) == "!deletelol")
+				PerformDeleteLOL(to, text);
+			else if(GetParameter(text, 0) == "!deleteface")
+				PerformDeleteFace(to, text);
+			else if(GetParameter(text, 0) == "!stats")
+				PerformStats(to, text);
+		}
 	}
 	catch(error)
 	{
@@ -158,6 +169,14 @@ function PerformSay(text) {
 
 function CommandFromAdmin(message) {
 	if(message.host.indexOf("cg.shawcable.net") > -1)
+		return true;
+	else
+		return false;
+}
+
+function CommandFromBannedUser(message) {
+return false;
+	if(message.prefix.toLowerCase().indexOf("panda") != -1)
 		return true;
 	else
 		return false;
@@ -262,6 +281,10 @@ function PerformStop(channel, text) {
 	}
 }
 
+function PerformStats(channel, text) {
+	bot.say(channel, "http://stats.sketchdaily.net/IRC/sketchdaily.html");
+}
+
 function PerformPartyHard(channel) {
 	var musicNotes = "\u266A \u266A \u266A"; // to get these codes, open charmap then scroll down a ways. the ascii value is shown at the bottom.
 	bot.say(channel, musicNotes + " WUB WUB WUB " + musicNotes);
@@ -300,6 +323,20 @@ function PerformLOL(channel, text) {
 				bot.say(channel, "Nothing found. lol :("); 
 		});
 }
+function PerformFace(channel, text) {
+	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
+	db.query("CALL drawbot.getFACE('" + tag + "');", function(err, rows, fields) { 
+			if (err) 
+				bot.say(channel, "DB Error."); 
+			else if(rows.length > 0)
+				if(rows[0].length > 0)
+					bot.say(channel, "(" + rows[0][0].id + ") " + rows[0][0].funny); 
+				else
+					bot.say(channel, "Nothing found. :(");
+			else
+				bot.say(channel, "Nothing found. :("); 
+		});
+}
 
 function PerformAddReference(from, channel, text) {
 	var imageLink = GetParameter(text, 1);
@@ -319,7 +356,6 @@ function PerformAddReference(from, channel, text) {
 			});
 	}
 }
-
 function PerformAddLOL(from, channel, text) {
 	var funny = GetAllParameters(text, 1);
 	var addedBy = from;
@@ -332,6 +368,22 @@ function PerformAddLOL(from, channel, text) {
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "lol!!"); // TO DO - include the id
+			});
+	}
+}
+
+function PerformAddFace(from, channel, text) {
+	var funny = GetAllParameters(text, 1);
+	var addedBy = from;
+
+	if(funny == "")
+		bot.say(channel, "that's not a face. ex: !addface (`3`) kiss");
+	else {
+		db.query("CALL drawbot.insertFace('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "so cute!!"); // TO DO - include the id
 			});
 	}
 }
@@ -359,6 +411,18 @@ function PerformDeleteLOL(channel, text) {
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "Deleted, lol."); // TO DO - show what was deleted first
+			});
+}
+function PerformDeleteFace(channel, text) {
+	var id = GetParameter(text, 1);
+	if(id == "")
+		bot.say("Must provide id. ex: !deleteface 1");
+	else 
+		db.query("CALL drawbot.deleteFace('" + id + "');", function(err, rows, fields) { 
+				if (err) 
+					bot.say(channel, "DB Error."); 
+				else
+					bot.say(channel, "Deleted, :<"); // TO DO - show what was deleted first
 			});
 }
 
