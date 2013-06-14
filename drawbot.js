@@ -356,6 +356,7 @@ function PerformAddReference(from, channel, text) {
 			});
 	}
 }
+
 function PerformAddLOL(from, channel, text) {
 	var funny = GetAllParameters(text, 1);
 	var addedBy = from;
