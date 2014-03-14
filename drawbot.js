@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "cindy14_2",
+	botName: "cindy14",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
