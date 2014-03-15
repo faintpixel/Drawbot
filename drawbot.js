@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "cindy14",
+	botName: "cindy14_2",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -33,6 +33,10 @@ log4js.configure({
 });
 var logger = log4js.getLogger('plain-logs');
 
+var fs = require('fs'),
+	stream = require('stream'),
+	readline = require('readline');
+
 var lastSeen = [];
 
 // random commands
@@ -41,6 +45,7 @@ bot.addListener("message", function(from, to, text, message) {
 		if(CommandFromBannedUser(message) == false) {
 			var firstWord = GetParameter(text, 0);
 			
+			//Should be a switch statement
 			if(firstWord == "!say")
 				PerformSay(text);
 			else if(firstWord == "!join")
@@ -81,7 +86,7 @@ bot.addListener("message", function(from, to, text, message) {
 				PerformDeleteFace(to, text);
 			else if(firstWord == "!stats")
 				PerformStats(to, text);
-			else if(firstWord == "!lastseen" ) 
+			else if(firstWord == "!lastseen" || firstWord == "!seen" ) 
 				PerformLastSeen(to,text);
 		}
 	} catch(error) {
@@ -446,14 +451,34 @@ function PerformDeleteFace(channel, text) {
 
 function PerformLastSeen(channel, text) {
 	var who = GetParameter(text, 1);
-	if( typeof lastSeen[who.toLower()] == 'undefined' ) 
-		bot.say(channel, "couldn't find "+who);
-	else bot.say( channel, lastSeen[who.toLower()] );
+	if( typeof lastSeen[who.toLowerCase()] == 'undefined' ) {
+		var temp = "";
+		var rd = readline.createInterface(fs.createReadStream('./skd.log'), stream);
+		
+		rd.on('line', function(line) {
+			var reg = new RegExp('plain-logs - <'+who+'>', 'i');
+			if( reg.test(line) )
+				temp = line;
+		});
+		
+		rd.on('close', function(){
+			if( temp != '' ) {
+				lastSeen[ who.toLowerCase()] = temp;
+				bot.say(channel, temp );
+				temp = "";
+			} else {
+				bot.say(channel, "couldn't find "+who);
+			}
+		});
+		
+	} else {
+		bot.say( channel, lastSeen[who.toLowerCase()] );
+	}
 }
 
 function registerLastSeen(who, text) {
 	var timestamp = GetTimestamp();
-	lastSeen[who.toLower()] = timestamp + " " + text;
+	lastSeen[who.toLowerCase()] = timestamp + " " + text;
 }
 
 function PerformSuggestTheme(channel, text) {
