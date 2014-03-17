@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "cindy14",
+	botName: "cindy14_2",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -33,58 +33,71 @@ log4js.configure({
 });
 var logger = log4js.getLogger('plain-logs');
 
+var fs = require('fs'),
+	stream = require('stream'),
+	readline = require('readline');
+
+var lastSeen = [];
+
 // random commands
 bot.addListener("message", function(from, to, text, message) {
-	try
-	{
-		if(CommandFromBannedUser(message) == false)
-		{
-			if(GetParameter(text, 0) == "!say")
+	try {
+		if(CommandFromBannedUser(message) == false) {
+			var firstWord = GetParameter(text, 0);
+			
+			//Should be a switch statement
+			if(firstWord == "!say")
 				PerformSay(text);
-			else if(GetParameter(text, 0) == "!join")
+			else if(firstWord == "!join")
 				PerformJoin(text, message);
-			else if(GetParameter(text, 0) == "!quit")
+			else if(firstWord == "!quit")
 				PerformQuit(message);
-			else if(GetParameter(text, 0) == "!timer")
+			else if(firstWord == "!timer")
 				PerformTimer(to, text);
-			else if(GetParameter(text, 0) == "!theme")
+			else if(firstWord == "!theme")
 				PerformTheme(to, text);
-			else if(GetParameter(text, 0) == "!participants")
+			else if(firstWord == "!participants")
 				PerformParticipants(to, text);
-			else if(GetParameter(text, 0) == "!start")
+			else if(firstWord == "!start")
 				PerformStart(to, text);
-			else if(GetParameter(text, 0) == "!stop")
+			else if(firstWord == "!stop")
 				PerformStop(to, text);
-			else if(GetParameter(text, 0) == "!partyhard")
+			else if(firstWord == "!partyhard")
 				PerformPartyHard(to, text);
-			else if(GetParameter(text, 0) == "!pandahard")
+			else if(firstWord == "!pandahard")
 				PerformPandaHard(to, text);
-			else if(GetParameter(text, 0) == "!addreference")
+			else if(firstWord == "!addreference")
 				PerformAddReference(from, to, text);
-			else if(GetParameter(text, 0) == "!reference")
+			else if(firstWord == "!reference")
 				PerformReference(to, text);
-			else if(GetParameter(text, 0) == "!deletereference")
+			else if(firstWord == "!deletereference")
 				PerformDeleteReference(to, text);			
-			else if(GetParameter(text, 0) == "!addlol")
+			else if(firstWord == "!addlol")
 				PerformAddLOL(from, to, text);
-			else if(GetParameter(text, 0) == "!lol")
+			else if(firstWord == "!lol")
 				PerformLOL(to, text);
-			else if(GetParameter(text, 0) == "!addface")
+			else if(firstWord == "!addface")
 				PerformAddFace(from, to, text);
-			else if(GetParameter(text, 0) == "!face")
+			else if(firstWord == "!face")
 				PerformFace(to, text);
-			else if(GetParameter(text, 0) == "!deletelol")
+			else if(firstWord == "!deletelol")
 				PerformDeleteLOL(to, text);
-			else if(GetParameter(text, 0) == "!deleteface")
+			else if(firstWord == "!deleteface")
 				PerformDeleteFace(to, text);
-			else if(GetParameter(text, 0) == "!stats")
+			else if(firstWord == "!stats")
 				PerformStats(to, text);
+			else if(firstWord == "!lastseen" || firstWord == "!seen" ) 
+				PerformLastSeen(to,text);
 		}
+	} catch(error) {
+		bot.say(to, "Invalid command." + error.message);
 	}
-	catch(error)
-	{
-		bot.say(to, "Invalid command.");
-	}
+});
+
+bot.addListener('error', function(message) {
+	var timestamp = GetTimestamp();
+    logger.info('irc error: ', message);
+    bot.say(config.channels[0],'3=D');
 });
 
 bot.addListener("topic", function(channel, topic, nick, message) {
@@ -94,6 +107,7 @@ bot.addListener("topic", function(channel, topic, nick, message) {
 
 bot.addListener("join", function(channel, nick, message) {
 	var timestamp = GetTimestamp();
+	registerLastSeen(nick, "* Joins: " + nick + " (" + message.prefix + ")" );
 	logger.info("* Joins: " + nick + " (" + message.prefix + ")");
 });
 
@@ -120,6 +134,7 @@ bot.addListener("nick", function(oldnick, newnick, channels, message) {
 bot.addListener("message#", function(from, channel, text, message) {
 	var timestamp = GetTimestamp();
 	logger.info("<" + from + "> " + text);
+	registerLastSeen(from, "<" + from + "> " + text);
 	if(GetParameter(text, 0) == "!part")
 		PerformPart(channel, text, message);
 });
@@ -131,8 +146,7 @@ function GetTimestamp() {
 	return timestamp;
 }
 
-String.prototype.startsWith = function(needle)
-{
+String.prototype.startsWith = function(needle) {
     return(this.indexOf(needle) == 0);
 };
 
@@ -175,7 +189,7 @@ function CommandFromAdmin(message) {
 }
 
 function CommandFromBannedUser(message) {
-return false;
+	return false;
 	if(message.prefix.toLowerCase().indexOf("panda") != -1)
 		return true;
 	else
@@ -217,16 +231,16 @@ var TimerId = "";
 
 function PerformTimer(channel, text) {
 	var time = GetParameter(text, 1);
-	if(time == "")
+	if(time == "") {
 		bot.say(channel, "Timer is " + Timer + " minutes.");
-	else {
-		if(isNaN(time))
+	} else {
+		if(isNaN(time)) {
 			bot.say(channel, "lrn2number noob. example: !timer 5");
-		else if(time <= 0)
+		} else if(time <= 0) {
 			bot.say(channel, "Time must be greater than 0.");
-		else if(time > 1000)
+		} else if(time > 1000) {
 			bot.say(channel, "It's too big!!! (that's what she said).");
-		else {
+		} else {
 			Timer = time;
 			bot.say(channel, "Timer set to " + Timer + " minutes.");
 		}
@@ -235,9 +249,9 @@ function PerformTimer(channel, text) {
 
 function PerformTheme(channel, text) {
 	var theme = GetAllParameters(text, 1);
-	if(theme == "")
+	if(theme == "") {
 		bot.say(channel, "Theme is \" " + Theme + " \".");
-	else {
+	} else {
 		Theme = theme;
 		bot.say(channel, "Theme set to \" " + Theme + " \".");
 	}
@@ -245,20 +259,22 @@ function PerformTheme(channel, text) {
 
 function PerformParticipants(channel, text) {
 	var participants = GetAllParameters(text, 1);
-	if(participants == "")
+	if(participants == "") {
 		bot.say(channel, "Participants: " + Participants);
-	else {
+	} else {
 		Participants = participants;
 		bot.say(channel, "Participants: " + Participants);
 	}
 }
 
 function PerformStart(channel, text) {
-	if(Theme == "")
+	if(Theme == "") {
 		bot.say(channel, "Theme must be set. ex: !theme something");
-	else if(Participants == "")
+	} else if(Participants == "") {
 		bot.say(channel, "Participants must be set. ex: !participants name1 name2 name3");
-	else {
+	} else if( TimerId != "" ) { // try and prevent multiple rounds
+		bot.say(channel, "A round has already started");
+	} else {
 		var checkeredFlag = "\u2584\u2580\u2584\u2580\u2584\u2580\u2584\u2580\u2584\u2580";
 		var timeUp = (Number(Timer) * 60 * 1000) + 8000; // add 8 seconds to the timer since we have the countdown
 		bot.say(channel, checkeredFlag + " NEW ROUND IS ABOUT TO START! " + checkeredFlag);
@@ -272,9 +288,9 @@ function PerformStart(channel, text) {
 }
 
 function PerformStop(channel, text) {
-	if(TimerId == "")
+	if(TimerId == "") {
 		bot.say(channel, "Nothing to stop (except hammer time)");
-	else {
+	} else {
 		clearTimeout(TimerId);
 		bot.say(channel, "The party has been pooped on. " + Participants);
 		TimerId = "";
@@ -297,44 +313,47 @@ function PerformPandaHard(channel) {
 function PerformReference(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
 	db.query("CALL drawbot.getReference('" + tag + "');", function(err, rows, fields) { 
-			if (err) 
+			if (err) {
 				bot.say(channel, "DB Error."); 
-			else if(rows.length > 0)
+			} else if(rows.length > 0) {
 				if(rows[0].length > 0)
 					bot.say(channel, "(" + rows[0][0].Id + ") " + rows[0][0].Link + " [" + rows[0][0].Tags + "]."); 
 				else
 					bot.say(channel, "Nothing found.");
-			else
+			} else {
 				bot.say(channel, "Nothing found."); 
+			}
 		});
 }
 
 function PerformLOL(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
 	db.query("CALL drawbot.getLOL('" + tag + "');", function(err, rows, fields) { 
-			if (err) 
+			if (err) {
 				bot.say(channel, "DB Error."); 
-			else if(rows.length > 0)
+			} else if(rows.length > 0) {
 				if(rows[0].length > 0)
 					bot.say(channel, "(" + rows[0][0].id + ") " + rows[0][0].funny); 
 				else
 					bot.say(channel, "Nothing found. lol :(");
-			else
+			} else {
 				bot.say(channel, "Nothing found. lol :("); 
+			}
 		});
 }
 function PerformFace(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
 	db.query("CALL drawbot.getFACE('" + tag + "');", function(err, rows, fields) { 
-			if (err) 
+			if (err) {
 				bot.say(channel, "DB Error."); 
-			else if(rows.length > 0)
+			} else if(rows.length > 0) {
 				if(rows[0].length > 0)
 					bot.say(channel, "(" + rows[0][0].id + ") " + rows[0][0].funny); 
 				else
 					bot.say(channel, "Nothing found. :(");
-			else
+			} else {
 				bot.say(channel, "Nothing found. :("); 
+			}
 		});
 }
 
@@ -343,11 +362,11 @@ function PerformAddReference(from, channel, text) {
 	var addedBy = from;
 	var tags = GetAllParameters(text, 2);
 
-	if(imageLink == "")
+	if(imageLink == "") {
 		bot.say(channel, "image link required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
-	else if(tags == "")
+	} else if(tags == "") {
 		bot.say(channel, "tag required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
-	else {
+	} else {
 		db.query("CALL drawbot.insertReference('" + imageLink + "', '" + tags + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
@@ -361,9 +380,9 @@ function PerformAddLOL(from, channel, text) {
 	var funny = GetAllParameters(text, 1);
 	var addedBy = from;
 
-	if(funny == "")
+	if(funny == "") {
 		bot.say(channel, "that's not funny. ex: !addlol <Dodongo> I'm so tall!");
-	else {
+	} else {
 		db.query("CALL drawbot.insertLOL('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
@@ -391,40 +410,75 @@ function PerformAddFace(from, channel, text) {
 
 function PerformDeleteReference(channel, text) {
 	var id = GetParameter(text, 1);
-	if(id == "")
+	if(id == "") {
 		bot.say("Must provide id. ex: !deletereference 1");
-	else 
+	} else {
 		db.query("CALL drawbot.deleteReference('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "Deleted reference."); // TO DO - show what was deleted first: Deleted (3) http://www.imgur.com/whatever.jpg [rat, hairy]
 			});
+	}
 }
 
 function PerformDeleteLOL(channel, text) {
 	var id = GetParameter(text, 1);
-	if(id == "")
+	if(id == "") {
 		bot.say("Must provide id. ex: !deletelol 1");
-	else 
+	} else {
 		db.query("CALL drawbot.deleteLOL('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "Deleted, lol."); // TO DO - show what was deleted first
 			});
+	}
 }
 function PerformDeleteFace(channel, text) {
 	var id = GetParameter(text, 1);
-	if(id == "")
+	if(id == "") {
 		bot.say("Must provide id. ex: !deleteface 1");
-	else 
+	} else {
 		db.query("CALL drawbot.deleteFace('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
 					bot.say(channel, "Deleted, :<"); // TO DO - show what was deleted first
 			});
+	}
+}
+
+function PerformLastSeen(channel, text) {
+	var who = GetParameter(text, 1);
+	if( typeof lastSeen[who.toLowerCase()] == 'undefined' ) {
+		var temp = "";
+		var rd = readline.createInterface(fs.createReadStream('./skd.log'), stream);
+		
+		rd.on('line', function(line) {
+			var reg = new RegExp('plain-logs - <'+who+'>', 'i');
+			if( reg.test(line) )
+				temp = line;
+		});
+		
+		rd.on('close', function(){
+			if( temp != '' ) {
+				lastSeen[ who.toLowerCase()] = temp;
+				bot.say(channel, temp );
+				temp = "";
+			} else {
+				bot.say(channel, "couldn't find "+who);
+			}
+		});
+		
+	} else {
+		bot.say( channel, lastSeen[who.toLowerCase()] );
+	}
+}
+
+function registerLastSeen(who, text) {
+	var timestamp = GetTimestamp();
+	lastSeen[who.toLowerCase()] = timestamp + " " + text;
 }
 
 function PerformSuggestTheme(channel, text) {
