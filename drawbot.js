@@ -1,7 +1,7 @@
 var config = {
 	channels: ["#sketchdaily"],
 	server: "irc.freenode.net",
-	botName: "cindy14_2",
+	botName: "izz14",
 	autoRejoin: true,
     autoConnect: true,
 	floodProtection: true,
@@ -16,9 +16,10 @@ var bot = new irc.Client(config.server, config.botName, {
 
 var mysql = require('mysql');
 var db = mysql.createConnection({
-  host     : 'lol',
-  user     : 'lol',
-  password : 'lol',
+  host     : 'newfrost.com',
+  user     : 'skd-drawbot',
+  database : 'Sketchdaily_Drawbot',
+  password : 'nope',
 });
 
 var log4js = require('log4js'); 
@@ -312,7 +313,7 @@ function PerformPandaHard(channel) {
 
 function PerformReference(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
-	db.query("CALL drawbot.getReference('" + tag + "');", function(err, rows, fields) { 
+	db.query("CALL getReference('" + tag + "');", function(err, rows, fields) { 
 			if (err) {
 				bot.say(channel, "DB Error."); 
 			} else if(rows.length > 0) {
@@ -328,7 +329,7 @@ function PerformReference(channel, text) {
 
 function PerformLOL(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
-	db.query("CALL drawbot.getLOL('" + tag + "');", function(err, rows, fields) { 
+	db.query("CALL getLOL('" + tag + "');", function(err, rows, fields) { 
 			if (err) {
 				bot.say(channel, "DB Error."); 
 			} else if(rows.length > 0) {
@@ -343,7 +344,7 @@ function PerformLOL(channel, text) {
 }
 function PerformFace(channel, text) {
 	var tag = GetParameter(text, 1); // TO DO - if is number, get by id instead
-	db.query("CALL drawbot.getFACE('" + tag + "');", function(err, rows, fields) { 
+	db.query("CALL getFACE('" + tag + "');", function(err, rows, fields) { 
 			if (err) {
 				bot.say(channel, "DB Error."); 
 			} else if(rows.length > 0) {
@@ -367,7 +368,7 @@ function PerformAddReference(from, channel, text) {
 	} else if(tags == "") {
 		bot.say(channel, "tag required. ex: !addreference http://www.something.com/test.jpg amazing, awesome, super cool");
 	} else {
-		db.query("CALL drawbot.insertReference('" + imageLink + "', '" + tags + "', '" + addedBy + "');", function(err, rows, fields) { 
+		db.query("CALL insertReference('" + imageLink + "', '" + tags + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
@@ -383,7 +384,7 @@ function PerformAddLOL(from, channel, text) {
 	if(funny == "") {
 		bot.say(channel, "that's not funny. ex: !addlol <Dodongo> I'm so tall!");
 	} else {
-		db.query("CALL drawbot.insertLOL('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
+		db.query("CALL insertLOL('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
@@ -399,7 +400,7 @@ function PerformAddFace(from, channel, text) {
 	if(funny == "")
 		bot.say(channel, "that's not a face. ex: !addface (`3`) kiss");
 	else {
-		db.query("CALL drawbot.insertFace('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
+		db.query("CALL insertFace('" + funny + "', '" + addedBy + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
@@ -413,7 +414,7 @@ function PerformDeleteReference(channel, text) {
 	if(id == "") {
 		bot.say("Must provide id. ex: !deletereference 1");
 	} else {
-		db.query("CALL drawbot.deleteReference('" + id + "');", function(err, rows, fields) { 
+		db.query("CALL deleteReference('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
@@ -427,7 +428,7 @@ function PerformDeleteLOL(channel, text) {
 	if(id == "") {
 		bot.say("Must provide id. ex: !deletelol 1");
 	} else {
-		db.query("CALL drawbot.deleteLOL('" + id + "');", function(err, rows, fields) { 
+		db.query("CALL deleteLOL('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
@@ -440,7 +441,7 @@ function PerformDeleteFace(channel, text) {
 	if(id == "") {
 		bot.say("Must provide id. ex: !deleteface 1");
 	} else {
-		db.query("CALL drawbot.deleteFace('" + id + "');", function(err, rows, fields) { 
+		db.query("CALL deleteFace('" + id + "');", function(err, rows, fields) { 
 				if (err) 
 					bot.say(channel, "DB Error."); 
 				else
