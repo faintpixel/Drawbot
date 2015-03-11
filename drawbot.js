@@ -72,7 +72,7 @@ bot.addListener("message", function(from, to, text, message) {
 			else if(firstWord == "!reference")
 				PerformReference(to, text);
 			else if(firstWord == "!deletereference")
-				PerformDeleteReference(to, text);			
+				PerformDeleteReference(to, text);
 			else if(firstWord == "!addlol")
 				PerformAddLOL(from, to, text);
 			else if(firstWord == "!lol")
@@ -146,6 +146,40 @@ function GetTimestamp() {
 	
 	return timestamp;
 }
+
+function SinceDate( compareDate ) {
+	var now = new Date();
+	var originalDate = new Date(compareDate);
+	var since = Math.floor(( now - originalDate )/1000);
+	var ret = "just now ";
+	var days = 0, hours = 0, minutes = 0, seconds = 0;
+	var daySeconds = 86400, hourSeconds = 3600, minuteSeconds = 60;
+	var showMinutes = true;
+	if( since > 0) {
+		ret = "";
+		if( since > daySeconds ) {
+			days = Math.floor(since/daySeconds);
+			since = since - (daySeconds*days);
+			ret = ret + ' ' + days + ' days';
+			showMinutes = false;
+		}
+		if( since > hourSeconds ) {
+			hours = Math.floor(since/hourSeconds);
+			since = since - (hourSeconds * hours);
+			ret = ret + ' ' + hours + ' hours';
+		}
+		if( since > minuteSeconds && showMinutes ) {
+			minutes = Math.floor(since/minuteSeconds);
+			since = since - (minuteSeconds * minutes);
+			ret = ret + ' ' + minutes + ' minutes';
+		} else if( since > 0 && showMinutes ) {
+			ret = ret + ' ' + since + ' seconds';
+		}
+		ret = ret + ' ago';
+	}
+	return ret;
+}
+
 
 String.prototype.startsWith = function(needle) {
     return(this.indexOf(needle) == 0);
@@ -464,8 +498,8 @@ function PerformLastSeen(channel, text) {
 		
 		rd.on('close', function(){
 			if( temp != '' ) {
-				lastSeen[ who.toLowerCase()] = temp;
-				bot.say(channel, temp );
+				lastSeen[ who.toLowerCase()] = temp.substring(1,24) + '  ' + temp.substring(45); // to match existing format
+				bot.say(channel, SinceDate(temp.substring(1,24)) + temp.substring(45) );
 				temp = "";
 			} else {
 				bot.say(channel, "couldn't find "+who);
@@ -473,7 +507,8 @@ function PerformLastSeen(channel, text) {
 		});
 		
 	} else {
-		bot.say( channel, lastSeen[who.toLowerCase()] );
+		bot.say( channel, 
+			SinceDate(lastSeen[who.toLowerCase()].substring(0,24)) + lastSeen[who.toLowerCase()].substring(24) );
 	}
 }
 
