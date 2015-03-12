@@ -491,7 +491,7 @@ function PerformLastSeen(channel, text) {
 		var rd = readline.createInterface(fs.createReadStream('./skd.log'), stream);
 		
 		rd.on('line', function(line) {
-			var reg = new RegExp('plain-logs - <'+who+'>', 'i');
+			var reg = new RegExp('plain-logs - <'+who.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")+'>', 'i');
 			if( reg.test(line) )
 				temp = line;
 		});
